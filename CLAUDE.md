@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Status
 
-Scaffolded, no features yet: `src/App.tsx` is an empty shell. `docs/idea.md` (product brief, in Ukrainian) holds the problem, MVP scope, technical approach and roadmap. Read it before making product or architecture decisions.
+MVP implemented. `docs/idea.md` (product brief, in Ukrainian) holds the problem, MVP scope, technical approach and roadmap. Read it before making product or architecture decisions.
 
 ## Commands
 
@@ -28,20 +28,25 @@ A free, ad-free round timer for boxing, kickboxing and interval training, shippe
 
 Typical use: the phone lies nearby or sits in a pocket, audio goes to headphones, and the user's hands are in gloves. Design for big digits, glanceable state colors and minimal interaction during a session.
 
-## Decided stack and architecture
+## Architecture
 
-- **React + Vite**, with `vite-plugin-pwa` for the manifest and service worker (offline support plus install to home screen).
-- **Data model:** an ordered list of slots `{ type: 'work' | 'rest', duration }`, generated from the setup form (rounds × round length + rest length). Each slot can be edited on its own after generation, and that per-slot editing is the main difference from competing apps.
-- **Timer state machine:** `idle → running ⇄ paused → done`.
-- **Two screens only in MVP:** setup (form + slot list) and timer.
+- **`src/lib/`: pure logic, unit-tested, no React.**
+  - `slots.ts`: `Config` (rounds, default round/rest length) plus `Overrides` (per-slot durations keyed by stable ids `w<n>` = round n, `r<n>` = rest after round n) → `generateSlots()`. Changing a default updates only non-edited slots. `pruneOverrides()` drops overrides for removed rounds or ones equal to the default. Rest 0 = no rest slots. `LIMITS` holds min/max/step.
+  - `timer.ts`: the state machine `idle → running ⇄ paused → finished(done|stopped)` as pure functions (`start/tick/pause/resume/skip/stop`) over a `Step[]` sequence (`buildSequence` = 10 s get-ready + slots with duration > 0). `tick` returns `TimerEvent`s (step-start, warning, done) that the UI turns into sounds. `view()` derives remaining/elapsed/rounds for display and the summary.
+  - `audio.ts` (Web Audio beeps + vibration) and `storage.ts` (validated `localStorage` for the workout and one-off UI flags).
+- **`src/hooks/`:** `useTimer` (owns state, 100 ms interval, extra tick on `visibilitychange`), `useWakeLock`, `useInstallHint` (iOS manual hint / Chrome `beforeinstallprompt`), `useRepeatPress` (hold − / + to repeat).
+- **`src/components/`:** `App.tsx` switches between `SetupScreen` (+ `SlotSheet`), `TimerScreen` and `SummaryScreen` based on timer status. There's no router.
+- **Styling:** plain CSS. Tokens live in `index.css`, components in `App.css`. Timer colors come from `data-phase` (`ready|work|rest|warn|paused`) on `.timer`, which swaps CSS variables. Fonts are self-hosted via `@fontsource` (latin only) so they're precached for offline use.
+- **Reset:** "Reset" (back to defaults plus clear edits) and "Reset edits" both apply immediately with a 5 s Undo toast. There's no confirm dialog.
+- **Design source:** the canvas https://claude.ai/artifact/KN3qV7hLmRgdipgy8MUmR6 has all screens and states.
 
 ## Non-obvious technical constraints
 
-- **Timing accuracy:** store an absolute `endTime` and render `endTime - performance.now()`. Never decrement a counter per tick, because it drifts and breaks when the tab is throttled. Pause/resume must recompute `endTime` from the remaining time.
+- **Timing accuracy:** store an absolute `endAt` and render `endAt - now`. Never decrement a counter per tick, because it drifts and breaks when the tab is throttled. Each step's end is the previous end + duration, so lag doesn't accumulate. Pause stores the remaining ms, and resume recomputes `endAt`. The clock is `Date.now()`, not `performance.now()` as the brief suggested: the monotonic clock may not advance while the device sleeps, and the timer must catch up after a lock.
 - **Wake lock is mandatory, not optional.** If the screen locks, browsers (especially iOS) suspend JS and the signals stop. Use the Screen Wake Lock API and re-request it on `visibilitychange`, because the lock is released when the page is hidden. Standalone iOS PWAs have had wake-lock bugs, so test both in the browser and from the home screen.
-- **Audio:** Web Audio API beeps generated with `OscillatorNode`, so there are no audio files. The `AudioContext` must be created or resumed inside the Start click handler, or autoplay policies will mute it. MVP sounds: round start, 10 s warning, round end.
+- **Audio:** Web Audio API beeps generated with `OscillatorNode`, so there are no audio files. The `AudioContext` must be created or resumed inside the Start click handler, or autoplay policies will mute it. Sounds: round start, rest start, 10 s warning (before any round or rest longer than 10 s), done. The test-sound button and Start both call `Beeper.unlock()`.
 - **Vibration:** `navigator.vibrate()` works on Android only (iOS has no such API). Feature-detect it and treat it as a bonus.
-- **Persistence:** `localStorage` holds only the last config.
+- **Persistence:** `localStorage` holds the last config + slot edits, read through `parseWorkout()`, which clamps and validates. Every access is wrapped in try/catch.
 - **Deploy:** GitHub Actions → GitHub Pages. `vite.config` needs `base: '/round_bell/'` to match the repo path, or assets 404.
 
 ## Scope guardrails

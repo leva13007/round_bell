@@ -13,12 +13,13 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
+      workbox: { globPatterns: ['**/*.{js,css,html,svg,woff2}'] },
       manifest: {
         name: 'RoundBell',
         short_name: 'RoundBell',
         description: 'Ad-free round timer for boxing and interval training',
-        theme_color: '#111111',
-        background_color: '#111111',
+        theme_color: '#0F0F12',
+        background_color: '#0F0F12',
         display: 'standalone',
         orientation: 'portrait',
         start_url: base,

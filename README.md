@@ -10,11 +10,11 @@ A free, ad-free round timer for boxing, kickboxing and interval training. Set ro
 
 ## where I left off
 
-Product brief is done (`docs/idea.md`). Project is scaffolded: React + TypeScript + Vite, `vite-plugin-pwa`, Vitest, oxlint, GitHub Pages deploy workflow, MIT license. `src/App.tsx` is an empty shell. No features yet.
+MVP implemented from the design canvas: setup with steppers and per-slot editing, Reset/Reset edits with undo, get-ready → work/rest timer with 10 s warning, pause, hold-to-stop, done/stopped summary, beeps + vibration, wake lock, offline PWA with install hint. Logic is unit-tested. Not yet tested on a real phone.
 
 ## next step
 
-Write the slot model and slot generation (`{ type: 'work' | 'rest', duration }[]` from rounds/round length/rest length) as a pure TS module with Vitest tests.
+Deploy to GitHub Pages and run a real workout on the iPhone, both in Safari and from the Home Screen (wake lock, beeps in headphones, Silent mode).
 
 ## development
 
