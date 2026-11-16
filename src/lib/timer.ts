@@ -11,14 +11,21 @@ export interface Step {
 
 export const READY_SECONDS = 10
 export const WARNING_MS = 10_000
+/** Beep and flash on each of the last N seconds of a step. */
+export const COUNTDOWN_SECONDS = 3
 
 export type TimerState =
   | { status: 'idle' }
-  | { status: 'running'; index: number; endAt: number; warned: boolean }
-  | { status: 'paused'; index: number; remaining: number; warned: boolean }
+  /** `count`: the last countdown second announced in this step (0 = none yet). */
+  | { status: 'running'; index: number; endAt: number; warned: boolean; count: number }
+  | { status: 'paused'; index: number; remaining: number; warned: boolean; count: number }
   | { status: 'finished'; outcome: 'done' | 'stopped'; index: number; remaining: number }
 
-export type TimerEvent = { type: 'step-start'; phase: Phase } | { type: 'warning' } | { type: 'done' }
+export type TimerEvent =
+  | { type: 'step-start'; phase: Phase }
+  | { type: 'warning' }
+  | { type: 'countdown'; seconds: number }
+  | { type: 'done' }
 
 export interface Transition {
   state: TimerState
@@ -38,13 +45,20 @@ export function buildSequence(slots: Slot[], readySeconds = READY_SECONDS): Step
 export function start(seq: Step[], now: number): Transition {
   if (seq.length === 0) return { state: { status: 'idle' }, events: [] }
   return {
-    state: { status: 'running', index: 0, endAt: now + seq[0].duration * 1000, warned: false },
+    state: { status: 'running', index: 0, endAt: now + seq[0].duration * 1000, warned: false, count: 0 },
     events: [{ type: 'step-start', phase: seq[0].phase }],
   }
 }
 
 function warnable(step: Step): boolean {
   return step.phase !== 'ready' && step.duration * 1000 > WARNING_MS
+}
+
+/** The countdown second (3, 2, 1) the step is in, or 0 outside the countdown. */
+export function countdownSecond(step: Step, remaining: number): number {
+  if (step.duration <= COUNTDOWN_SECONDS || remaining <= 0) return 0
+  const n = Math.ceil(remaining / 1000)
+  return n <= COUNTDOWN_SECONDS ? n : 0
 }
 
 /**
@@ -54,7 +68,7 @@ function warnable(step: Step): boolean {
  */
 export function tick(seq: Step[], state: TimerState, now: number): Transition {
   if (state.status !== 'running') return { state, events: [] }
-  let { index, endAt, warned } = state
+  let { index, endAt, warned, count } = state
   let advanced = false
   while (now >= endAt) {
     index++
@@ -66,6 +80,7 @@ export function tick(seq: Step[], state: TimerState, now: number): Transition {
     }
     endAt += seq[index].duration * 1000
     warned = false
+    count = 0
     advanced = true
   }
   const events: TimerEvent[] = []
@@ -74,18 +89,23 @@ export function tick(seq: Step[], state: TimerState, now: number): Transition {
     warned = true
     events.push({ type: 'warning' })
   }
+  const n = countdownSecond(seq[index], endAt - now)
+  if (n > 0 && (count === 0 || n < count)) {
+    count = n
+    events.push({ type: 'countdown', seconds: n })
+  }
   if (!advanced && events.length === 0) return { state, events }
-  return { state: { status: 'running', index, endAt, warned }, events }
+  return { state: { status: 'running', index, endAt, warned, count }, events }
 }
 
 export function pause(state: TimerState, now: number): TimerState {
   if (state.status !== 'running') return state
-  return { status: 'paused', index: state.index, remaining: Math.max(0, state.endAt - now), warned: state.warned }
+  return { status: 'paused', index: state.index, remaining: Math.max(0, state.endAt - now), warned: state.warned, count: state.count }
 }
 
 export function resume(state: TimerState, now: number): TimerState {
   if (state.status !== 'paused') return state
-  return { status: 'running', index: state.index, endAt: now + state.remaining, warned: state.warned }
+  return { status: 'running', index: state.index, endAt: now + state.remaining, warned: state.warned, count: state.count }
 }
 
 /** Jumps to the start of the next step (used for "Start now" during get-ready). */
@@ -99,7 +119,7 @@ export function skip(seq: Step[], state: TimerState, now: number): Transition {
     }
   }
   return {
-    state: { status: 'running', index, endAt: now + seq[index].duration * 1000, warned: false },
+    state: { status: 'running', index, endAt: now + seq[index].duration * 1000, warned: false, count: 0 },
     events: [{ type: 'step-start', phase: seq[index].phase }],
   }
 }

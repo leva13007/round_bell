@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { WARNING_MS, type Step, type TimerState, type TimerView } from '../lib/timer'
+import { WARNING_MS, countdownSecond, type Step, type TimerState, type TimerView } from '../lib/timer'
 import { displaySeconds, formatClock } from '../lib/time'
 import type { WakeLockStatus } from '../hooks/useWakeLock'
 import { HoldButton } from './HoldButton'
@@ -20,10 +20,10 @@ type Visual = 'ready' | 'work' | 'rest' | 'warn' | 'paused'
 
 const THEME_COLORS: Record<Visual, string> = {
   ready: '#0F0F12',
-  work: '#D23A12',
-  rest: '#1E3A8A',
+  work: '#15803D',
+  rest: '#D23A12',
   warn: '#FFB020',
-  paused: '#3A1A10',
+  paused: '#2A2A31',
 }
 
 interface Props {
@@ -88,9 +88,11 @@ export function TimerScreen(p: Props) {
   const clock = formatClock(displaySeconds(view.remaining))
   const progress = step.duration > 0 ? 1 - view.remaining / (step.duration * 1000) : 1
   const wakeProblem = wakeAlert && !wakeDismissed
+  const count = paused ? 0 : countdownSecond(step, view.remaining)
 
   return (
     <div className="timer" data-phase={visual}>
+      {count > 0 && <div key={`${view.index}-${count}`} className="flash" aria-hidden="true" />}
       <div className="timer__top">
         <div className="timer__label">{top}</div>
         <div className="timer__status">

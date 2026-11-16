@@ -54,6 +54,34 @@ describe('timer', () => {
     expect(tick(tiny, s, T0 + 5_000).events).toEqual([])
   })
 
+  it('counts down the last 3 seconds of each step once per second', () => {
+    let s = start(seq, T0).state // ready ends at T0+10s
+    const at = (ms: number) => {
+      const r = tick(seq, s, T0 + ms)
+      s = r.state
+      return r.events
+    }
+    expect(at(6_900)).toEqual([])
+    expect(at(7_000)).toEqual([{ type: 'countdown', seconds: 3 }])
+    expect(at(7_500)).toEqual([])
+    expect(at(8_100)).toEqual([{ type: 'countdown', seconds: 2 }])
+    expect(at(9_950)).toEqual([{ type: 'countdown', seconds: 1 }]) // a late tick skips 2→1 without repeats
+    expect(at(10_000)).toEqual([{ type: 'step-start', phase: 'work' }])
+    expect(at(30_000)).toEqual([{ type: 'warning' }])
+    expect(at(37_200)).toEqual([{ type: 'countdown', seconds: 3 }])
+  })
+
+  it('does not count down steps of 3 s or less', () => {
+    const tiny: Step[] = [{ phase: 'rest', duration: 3, round: 1 }]
+    expect(tick(tiny, start(tiny, T0).state, T0 + 500).events).toEqual([])
+  })
+
+  it('keeps the countdown position across pause and resume', () => {
+    const s = tick(seq, start(seq, T0).state, T0 + 7_500).state
+    const resumed = resume(pause(s, T0 + 7_600), T0 + 20_000)
+    expect(tick(seq, resumed, T0 + 20_100).events).toEqual([])
+  })
+
   it('catches up over several steps after a long gap and announces only the landing step', () => {
     const s = start(seq, T0).state
     const r = tick(seq, s, T0 + 56_000) // past ready (10) + work (30) + rest (15)

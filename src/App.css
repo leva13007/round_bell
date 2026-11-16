@@ -510,7 +510,7 @@
   --seg: 255, 255, 255;
   --digits: #fff;
   --primary-bg: #fff;
-  --primary-fg: #8a1f05;
+  --primary-fg: #0f5a2b;
   --secondary-bg: rgba(0, 0, 0, 0.24);
   --secondary-fg: #fff;
 
@@ -522,6 +522,24 @@
   color: var(--fg);
   transition: background-color 0.25s ease;
   user-select: none;
+  position: relative;
+}
+/* Last 3 seconds: a full-screen flash on each second, white on green/red, dark on amber. */
+.flash {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: #fff;
+  pointer-events: none;
+  animation: flash 0.45s ease-out forwards;
+}
+@keyframes flash {
+  from {
+    opacity: 0.9;
+  }
+  to {
+    opacity: 0;
+  }
 }
 .timer[data-phase='rest'] {
   background: var(--rest);
@@ -544,6 +562,9 @@
   --secondary-bg: rgba(0, 0, 0, 0.14);
   --secondary-fg: var(--ink);
 }
+.timer[data-phase='warn'] .flash {
+  background: var(--ink);
+}
 .timer[data-phase='ready'] {
   background: var(--bg);
   --fg: #f4f4f5;
@@ -558,12 +579,12 @@
   --secondary-bg: var(--surface);
 }
 .timer[data-phase='paused'] {
-  background: #3a1a10;
+  background: #2a2a31;
   --chip-bg: #fff;
-  --chip-fg: #3a1a10;
+  --chip-fg: #2a2a31;
   --track: rgba(255, 255, 255, 0.14);
-  --fill: #e9cfc6;
-  --digits: #e9cfc6;
+  --fill: #d4d4d8;
+  --digits: #d4d4d8;
   --primary-bg: var(--work);
   --primary-fg: #fff;
   --secondary-bg: rgba(255, 255, 255, 0.12);

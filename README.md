@@ -13,9 +13,9 @@ Set your rounds and rests, adjust any single round, and train with the screen ke
 
 <p align="center">
   <img src="docs/screenshots/setup.png" width="200" alt="Setup screen: rounds, round and rest steppers, and the list of slots with an edited rest">
-  <img src="docs/screenshots/round.png" width="200" alt="Round in progress: large 1:47 countdown on orange, timeline of the workout at the top">
+  <img src="docs/screenshots/round.png" width="200" alt="Round in progress: large 1:47 countdown on green, timeline of the workout at the top">
   <img src="docs/screenshots/last-10s.png" width="200" alt="Last 10 seconds of a round: the screen turns amber">
-  <img src="docs/screenshots/rest.png" width="200" alt="Rest: 0:42 countdown on blue, next round shown below">
+  <img src="docs/screenshots/rest.png" width="200" alt="Rest: 0:42 countdown on red, next round shown below">
 </p>
 
 ## Why
@@ -25,8 +25,8 @@ Most round timers either interrupt your training with ads or lock basic features
 ## Features
 
 - **Rounds you can edit one by one.** Pick the number of rounds, round length and rest length, then tap any single round or rest to change just that one. A shorter final round or a longer rest halfway through is two taps.
-- **Readable from across the room.** Huge digits and a full-screen color per stage: orange for work, blue for rest, amber for the last 10 seconds.
-- **Bell signals in your headphones.** Distinct sounds for round start, rest, the 10-second warning and the end. Android phones vibrate too.
+- **Readable from across the room.** Huge digits and a full-screen color per stage: green for work, red for rest, amber for the last 10 seconds, and a flash on each of the last 3.
+- **Loud signals in your headphones.** Bright, high-pitched sounds that cut through music: round start, rest, a 10-second warning, a 3-2-1 countdown beep and the end. Android phones vibrate too.
 - **Screen stays on** for the whole workout, so the timer keeps running and the signals keep coming.
 - **Made for gloves.** Large buttons, a 10-second get-ready countdown, and Stop works only when held, so a stray tap can't end your workout.
 - **Whole workout at a glance.** A timeline shows every round and rest, with the current one highlighted, plus time elapsed and time left.
@@ -38,7 +38,7 @@ Most round timers either interrupt your training with ads or lock basic features
 - **iPhone:** open the link in Safari, tap **Share → Add to Home Screen**.
 - **Android:** open the link in Chrome and tap **Install** in the banner (or **⋮ → Add to Home screen**).
 
-On iPhone, Silent mode also mutes web audio. Flip the side switch off to hear the bell.
+On iPhone, Silent mode also mutes web audio. Flip the side switch off to hear the signals. They play at your phone's media volume. A web app can't lower other apps' music, so if you train with music, keep the music a bit below full volume.
 
 ## Updating
 

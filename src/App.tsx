@@ -46,6 +46,7 @@ export default function App() {
     const b = beeperRef.current
     if (!b) return
     if (e.type === 'warning') b.play('warning')
+    else if (e.type === 'countdown') b.play('countdown')
     else if (e.type === 'done') b.play('done')
     else if (e.phase === 'work') b.play('round')
     else if (e.phase === 'rest') b.play('rest')
