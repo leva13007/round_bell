@@ -18,6 +18,8 @@ npx vitest run src/path/file.test.ts   # single test file
 npx vitest run -t "name"               # tests matching a name
 ```
 
+**Versioning:** `package.json` `version` is the single source. Vite injects it as `__APP_VERSION__` (declared in `src/globals.d.ts`), and it's shown at the bottom of the Setup screen so users can confirm an update arrived. For a release: bump it with `npm pkg set version=X.Y.Z`, commit, then tag `vX.Y.Z`.
+
 CI (`.github/workflows/deploy.yml`) runs lint → test → build on every push to `main` and deploys `dist/` to GitHub Pages. The repo's Pages source must be set to "GitHub Actions".
 
 Testing scope: unit tests cover pure logic (slot generation, timer state machine), so keep that logic in plain TS modules outside React components. There are no UI/E2E tests.

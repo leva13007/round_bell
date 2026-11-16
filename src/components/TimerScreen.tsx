@@ -4,7 +4,6 @@ import { displaySeconds, formatClock } from '../lib/time'
 import type { WakeLockStatus } from '../hooks/useWakeLock'
 import { HoldButton } from './HoldButton'
 import {
-  AwakeIcon,
   BellIcon,
   CloseIcon,
   HandIcon,
@@ -104,13 +103,11 @@ export function TimerScreen(p: Props) {
           >
             {p.muted ? <MutedIcon /> : <SoundIcon />}
           </button>
-          <span
-            className={`status-icon${wakeAlert ? ' status-icon--alert' : ''}`}
-            role="img"
-            aria-label={wakeAlert ? 'Screen may turn off' : 'Screen kept awake'}
-          >
-            {wakeAlert ? <SleepIcon size={20} /> : <AwakeIcon />}
-          </span>
+          {wakeAlert && (
+            <span className="status-icon status-icon--alert" role="img" aria-label="Screen may turn off">
+              <SleepIcon size={20} />
+            </span>
+          )}
         </div>
       </div>
 

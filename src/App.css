@@ -329,6 +329,13 @@
   color: var(--faint);
 }
 
+.app-version {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--faint);
+}
+
 .setup__footer {
   padding: 14px 16px calc(20px + env(safe-area-inset-bottom));
   border-top: 1px solid var(--line);
@@ -612,26 +619,28 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  height: 14px;
+  height: 24px;
   margin-top: 10px;
 }
 .seg {
   flex: 1 1 0;
   min-width: 2px;
   border-radius: 4px;
-  height: 10px;
+  height: 8px;
   background: rgba(var(--seg), 0.6);
 }
 .seg--rest {
-  height: 6px;
+  height: 5px;
   background: rgba(var(--seg), 0.35);
 }
 .seg--past {
   background: rgba(var(--seg), 0.3);
 }
 .seg--current {
-  height: 14px;
+  height: 24px;
+  border-radius: 7px;
   background: rgba(var(--seg), 1);
+  box-shadow: 0 0 0 3px rgba(var(--seg), 0.25);
 }
 .timer[data-phase='ready'] .seg {
   background: #3f3f46;

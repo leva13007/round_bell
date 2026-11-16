@@ -144,6 +144,8 @@ export function SetupScreen(p: Props) {
             </li>
           ))}
         </ul>
+
+        <p className="app-version">RoundBell v{__APP_VERSION__}</p>
       </div>
 
       {p.toast && (
