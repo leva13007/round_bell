@@ -35,6 +35,12 @@ Most round timers either interrupt your training with ads or lock basic features
 
 ## Install on your phone
 
+<p align="center">
+  <img src="docs/qr.svg" width="180" alt="QR code that opens https://leva13007.github.io/round_bell/">
+  <br>
+  <sub>Scan with your phone's camera to open RoundBell</sub>
+</p>
+
 - **iPhone:** open the link in Safari, tap **Share → Add to Home Screen**.
 - **Android:** open the link in Chrome and tap **Install** in the banner (or **⋮ → Add to Home screen**).
 
