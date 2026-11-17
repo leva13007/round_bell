@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { generateSlots } from './slots'
-import { buildSequence, pause, resume, skip, start, stop, tick, view, type Step } from './timer'
+import { buildSequence, pause, resume, runAnchor, skip, soundPlan, start, stop, tick, view, type Step } from './timer'
 
 // ready 10 s → work 30 s → rest 15 s → work 30 s
 const seq: Step[] = buildSequence(generateSlots({ rounds: 2, work: 30, rest: 15 }, {}))
@@ -132,5 +132,51 @@ describe('view', () => {
   it('reports everything done when finished', () => {
     const s = tick(seq, start(seq, T0).state, T0 + 90_000).state
     expect(view(seq, s, T0 + 90_000)).toMatchObject({ elapsed: 75_000, roundsDone: 2, remaining: 0 })
+  })
+})
+
+describe('soundPlan', () => {
+  it('lists every sound of a fresh run, ready step silent', () => {
+    const s = start(seq, T0).state
+    const plan = soundPlan(seq, s, T0).map((p) => [p.sound, p.at - T0])
+    expect(plan).toEqual([
+      // ready 0–10 s: countdown only
+      ['countdown', 7_000], ['countdown', 8_000], ['countdown', 9_000],
+      // work 10–40 s
+      ['round', 10_000], ['warning', 30_000],
+      ['countdown', 37_000], ['countdown', 38_000], ['countdown', 39_000],
+      // rest 40–55 s
+      ['rest', 40_000], ['warning', 45_000],
+      ['countdown', 52_000], ['countdown', 53_000], ['countdown', 54_000],
+      // work 55–85 s
+      ['round', 55_000], ['warning', 75_000],
+      ['countdown', 82_000], ['countdown', 83_000], ['countdown', 84_000],
+      ['done', 85_000],
+    ])
+  })
+
+  it('drops sounds already in the past after a resume', () => {
+    const running = tick(seq, start(seq, T0).state, T0 + 35_000).state // 5 s left in round 1
+    const paused = pause(running, T0 + 35_000)
+    const resumed = resume(paused, T0 + 100_000)
+    const plan = soundPlan(seq, resumed, T0 + 100_000)
+    expect(plan[0]).toEqual({ sound: 'countdown', at: T0 + 102_000 })
+    expect(plan.some((p) => p.sound === 'round' && p.at < T0 + 100_000)).toBe(false)
+  })
+
+  it('is empty unless running', () => {
+    expect(soundPlan(seq, { status: 'idle' }, T0)).toEqual([])
+    expect(soundPlan(seq, pause(start(seq, T0).state, T0 + 1_000), T0 + 1_000)).toEqual([])
+  })
+})
+
+describe('runAnchor', () => {
+  it('stays put while steps advance and moves on resume', () => {
+    const s0 = start(seq, T0).state
+    const s1 = tick(seq, s0, T0 + 12_000).state
+    expect(runAnchor(seq, s0)).toBe(T0)
+    expect(runAnchor(seq, s1)).toBe(T0)
+    const r = resume(pause(s1, T0 + 20_000), T0 + 50_000)
+    expect(runAnchor(seq, r)).toBe(T0 + 30_000)
   })
 })

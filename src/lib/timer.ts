@@ -173,3 +173,47 @@ export function view(seq: Step[], state: TimerState, now: number): TimerView | n
   })
   return { index, step, remaining, elapsed, total, workDone, roundsDone, roundsTotal }
 }
+
+export type SoundCue = 'round' | 'rest' | 'warning' | 'countdown' | 'done'
+
+export interface PlannedSound {
+  sound: SoundCue
+  /** Wall-clock time (Date.now() ms) when the sound should start. */
+  at: number
+}
+
+/**
+ * Every sound left in a running workout, as absolute wall-clock times. The audio layer schedules
+ * them ahead on the AudioContext clock, so signals stay on time even when the JS thread is
+ * throttled. Mirrors what `tick` announces: step start, 10 s warning, 3-2-1 countdown, done.
+ * Only sounds at or after `now` are returned, so resuming doesn't replay the current step start.
+ */
+export function soundPlan(seq: Step[], state: TimerState, now: number): PlannedSound[] {
+  if (state.status !== 'running') return []
+  const plan: PlannedSound[] = []
+  let endAt = state.endAt
+  for (let i = state.index; i < seq.length; i++) {
+    const step = seq[i]
+    if (i > state.index) endAt += step.duration * 1000
+    const startAt = endAt - step.duration * 1000
+    if (step.phase !== 'ready') plan.push({ sound: step.phase === 'work' ? 'round' : 'rest', at: startAt })
+    if (warnable(step)) plan.push({ sound: 'warning', at: endAt - WARNING_MS })
+    if (step.duration > COUNTDOWN_SECONDS) {
+      for (let n = COUNTDOWN_SECONDS; n >= 1; n--) plan.push({ sound: 'countdown', at: endAt - n * 1000 })
+    }
+  }
+  plan.push({ sound: 'done', at: endAt })
+  return plan.filter((p) => p.at >= now)
+}
+
+/**
+ * Wall-clock time the current run would have started had it never paused or skipped. It stays the
+ * same while steps advance naturally and changes on start, resume and skip, so it tells the UI
+ * when the sound plan must be rebuilt.
+ */
+export function runAnchor(seq: Step[], state: TimerState): number | null {
+  if (state.status !== 'running') return null
+  let elapsed = 0
+  for (let i = 0; i <= state.index; i++) elapsed += seq[i].duration * 1000
+  return state.endAt - elapsed
+}

@@ -18,7 +18,7 @@ import {
   type Slot,
 } from './lib/slots'
 import { getFlag, loadWorkout, saveWorkout, setFlag, type Workout } from './lib/storage'
-import { buildSequence, type TimerEvent } from './lib/timer'
+import { buildSequence, runAnchor, soundPlan, type TimerEvent } from './lib/timer'
 import { formatClock } from './lib/time'
 
 const UNDO_MS = 5000
@@ -42,19 +42,36 @@ export default function App() {
   useEffect(() => saveWorkout(workout), [workout])
   useEffect(() => () => window.clearTimeout(toastTimer.current), [])
 
+  // Sounds are scheduled ahead (see the effect below); timer events only drive vibration.
   const onTimerEvent = useCallback((e: TimerEvent) => {
     const b = beeperRef.current
     if (!b) return
-    if (e.type === 'warning') b.play('warning')
-    else if (e.type === 'countdown') b.play('countdown')
-    else if (e.type === 'done') b.play('done')
-    else if (e.phase === 'work') b.play('round')
-    else if (e.phase === 'rest') b.play('rest')
+    if (e.type === 'warning') b.vibrate('warning')
+    else if (e.type === 'countdown') b.vibrate('countdown')
+    else if (e.type === 'done') b.vibrate('done')
+    else if (e.phase === 'work') b.vibrate('round')
+    else if (e.phase === 'rest') b.vibrate('rest')
   }, [])
 
   const timer = useTimer(onTimerEvent)
   const active = timer.state.status === 'running' || timer.state.status === 'paused'
   const wakeLock = useWakeLock(active)
+
+  // Rebuild the sound plan only when the run's timeline changes (start, pause, resume, skip,
+  // stop), not on every tick: natural step changes keep the same anchor.
+  const timerRef = useRef(timer)
+  useEffect(() => {
+    timerRef.current = timer
+  })
+  const anchor = runAnchor(timer.seq, timer.state)
+  const planKey = anchor !== null ? `run:${anchor}` : timer.state.status === 'finished' ? `finished:${timer.state.outcome}` : timer.state.status
+  useEffect(() => {
+    const b = beeperRef.current
+    if (!b) return
+    const { seq, state } = timerRef.current
+    if (state.status === 'finished' && state.outcome === 'done') b.release()
+    else b.schedule(soundPlan(seq, state, Date.now()))
+  }, [planKey])
 
   const showToast = (message: string, previous: Workout) => {
     window.clearTimeout(toastTimer.current)
@@ -99,10 +116,7 @@ export default function App() {
   const testSound = () => {
     const b = beeper()
     b.unlock()
-    const wasMuted = b.muted
-    b.muted = false
     b.play('round')
-    b.muted = wasMuted
   }
 
   const { state, view } = timer
